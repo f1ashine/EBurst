@@ -3,7 +3,9 @@ import urllib2, requests, optparse, time, threading, Queue, sys, certifi
 from base64 import encodestring
 from requests_ntlm import HttpNtlmAuth
 from lib.consle_width import getTerminalSize
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 class Check_Exchange_User:
     def __init__(self, domain, type=None, protocol=None, user=None, userfile=None, password=None, passfile=None,
@@ -63,7 +65,7 @@ class Check_Exchange_User:
     # NTLM认证验证
     def check_NTLM_userpass(self, user, password, url):
         try:
-            response = requests.get(url, auth=HttpNtlmAuth(user, password), headers=self.HEADERS)
+            response = requests.get(url, auth=HttpNtlmAuth(user, password), headers=self.HEADERS, verify=False)
             if 401 != response.status_code and 408 != response.status_code and 504 != response.status_code:
                 return True
             else:
@@ -79,7 +81,7 @@ class Check_Exchange_User:
             HEADERS["Authorization"] = "Basic %s" % encodestring('%s:%s' % (user, password))[:-1]
             request = requests.session()
             request.keep_alive = False
-            response = request.get(url, headers=HEADERS)
+            response = request.get(url, headers=HEADERS, verify=False)
             if 401 != response.status_code and 408 != response.status_code and 504 != response.status_code:
                 return True
             else:
@@ -112,7 +114,7 @@ class Check_Exchange_User:
             }
             request = requests.session()
             request.keep_alive = False
-            response = request.post(url, data=data, headers=HEADERS, allow_redirects=False)
+            response = request.post(url, data=data, headers=HEADERS, allow_redirects=False, verify=False)
             if "Location" not in response.headers:
                 return False
             if "reason" not in response.headers["Location"]:
@@ -202,7 +204,7 @@ class Check_Exchange_User:
             request = requests.session()
             request.keep_alive = False
             try:
-                response = request.get(url, headers=self.HEADERS, allow_redirects=False)
+                response = request.get(url, headers=self.HEADERS, allow_redirects=False, verify=False)
                 if 404 != response.status_code and 301 != response.status_code and 302 != response.status_code and 403 != response.status_code:
                     print u"URL: %s ,code:%s" % (url, response.status_code) + u"\t有效可以爆破"
                 else:
@@ -221,7 +223,7 @@ class Check_Exchange_User:
 
         request = requests.session()
         request.keep_alive = False
-        response = request.get(url, headers=self.HEADERS)
+        response = request.get(url, headers=self.HEADERS, verify=False)
         authenticate_type = response.headers["WWW-Authenticate"]
         # 认证方式不为默认类型，则替换为支持的类型
         if mode not in authenticate_type:
